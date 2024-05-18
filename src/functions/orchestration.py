@@ -13,10 +13,15 @@ from functions.processing import (left_join_dfs,
                                   impute_missing_categories,
                                   impute_missing_values)
 
+# Importar funciones de ingeniería de características
+from functions.featuring import (features_new,
+                                 rfm)
+
 # Directorios para los archivos de parámetros y los datos
 parameters_directory = os.path.join(project_root, 'src', 'parameters')
 data_raw_directory = os.path.join(project_root, 'data', '01_raw')
 data_processed_directory = os.path.join(project_root, 'data', '02_processed')
+data_featured_directory = os.path.join(project_root, 'data', '03_featured')
 
 # Lista todos los archivos YAML en el directorio especificado
 yaml_files = [f for f in os.listdir(parameters_directory) if f.endswith('.yml')]
@@ -58,4 +63,25 @@ def run_processing():
     # Guardar datos procesados
     processed_data_path = os.path.join(data_processed_directory,
                                        parameters['parameters_catalog']['processed_data_path'])
-    data_processing.to_csv(processed_data_path, index=False)
+    data_processing.to_parquet(processed_data_path, index=False)
+
+
+# Pipeline de ingeniería de características
+def run_featuring():
+
+    # Cargar datos
+    processed_data_path = os.path.join(data_processed_directory, parameters['parameters_catalog']['processed_data_path'])
+    data_processed = pd.read_parquet(processed_data_path)
+
+    # Crear nuevas características
+    data_featured = features_new(data_processed, parameters['parameters_featuring'])
+
+    # Crear RFM
+    rfm_table = rfm(data_featured, parameters['parameters_featuring'])
+
+    # Guardar datos con características
+    featured_data_path = os.path.join(data_featured_directory, parameters['parameters_catalog']['featured_data_path'])
+    rfm_table_path = os.path.join(data_featured_directory, parameters['parameters_catalog']['rfm_table_path'])
+
+    data_featured.to_parquet(featured_data_path, index=False)
+    rfm_table.to_parquet(rfm_table_path, index=False)
