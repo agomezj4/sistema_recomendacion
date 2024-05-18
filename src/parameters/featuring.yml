@@ -1,0 +1,81 @@
+## Featuring parameters
+
+# Parámetros para features_new
+edad:
+ - EDAD_CLIENTE
+ - FECHANACIMIENTO_DIM_CLIENTE
+
+grupo_etario:
+ - GRUPO_ETARIO_CLIENTE
+
+bins_grupo_etario: [0, 13, 18, 26, 61, 100]
+
+labels_grupo_etario: ['Niño', 'Adolescente', 'Joven', 'Adulto', 'Persona Mayor']
+
+generacion:
+ - GENERACION_CLIENTE
+
+bins_generacion: [0, 11, 26, 57, 100]
+
+labels_generacion: ['Centennial', 'Millennial', 'Baby Boomer', 'Tradicionalista']
+
+regiones:
+ - REGION_CLIENTE
+ - DEPARTAMENTO
+
+categorias_regiones: {
+      "ANTIOQUIA": "Region Andina",
+      "ARAUCA": "Region Orinoquia",
+      "ATLÁNTICO": "Region Caribe",
+      "BOGOTÁ, D.C.": "Region Central",
+      "BOLÍVAR": "Region Caribe",
+      "BOYACÁ": "Region Andina",
+      "CALDAS": "Region Andina",
+      "CAQUETÁ": "Region Amazonica",
+      "CASANARE": "Region Orinoquia",
+      "CAUCA": "Region Pacifica",
+      "CESAR": "Region Caribe",
+      "CHOCÓ": "Region Pacifica",
+      "CÓRDOBA": "Region Caribe",
+      "CUNDINAMARCA": "Region Andina",
+      "GUAVIARE": "Region Amazonica",
+      "HUILA": "Region Andina",
+      "LA GUAJIRA": "Region Caribe",
+      "MAGDALENA": "Region Caribe",
+      "META": "Region Orinoquia",
+      "NARIÑO": "Region Pacifica",
+      "NORTE DE SANTANDER": "Region Andina",
+      "PUTUMAYO": "Region Amazonica",
+      "QUINDÍO": "Region Andina",
+      "RISARALDA": "Region Andina",
+      "SANTANDER": "Region Andina",
+      "SUCRE": "Region Caribe",
+      "TOLIMA": "Region Andina",
+      "VALLE DEL CAUCA": "Region Pacifica"
+  }
+
+fechas:
+ - PERIODO_COMPRA
+ - FECHA_SOLUCION
+ - FECHANACIMIENTO_DIM_CLIENTE
+
+recencia:
+ - RECENCIA_CLIENTE
+
+id_cliente:
+ - UUID_CLIENTE_CONSUMIDOR
+
+pedido:
+ - PEDIDO
+
+frecuencia:
+ - FRECUENCIA_PEDIDO
+
+monto:
+ - MONTO_PEDIDO
+ - VENTA_BRUTA_CON_IVA
+
+producto:
+ - COD_PRODUCTO
+ - CATEGORIA
+ - UNIDADES_BRUTAS
