@@ -19,7 +19,7 @@ from functions.featuring import (features_new,
                                  add_segment_fl)
 
 # Importar funciones de model input
-from functions.model_input import (transform_rfm, train_test_split)
+from functions.model_input import (transform_rfm, split_data)
 
 # Directorios para los archivos de parámetros y los datos
 parameters_directory = os.path.join(project_root, 'src', 'parameters')
@@ -108,11 +108,11 @@ def run_model_input():
     data_transform_rfm = transform_rfm(data_featured, parameters['parameters_featuring'])
 
     # Dividir los datos en entrenamiento, validación y prueba
-    train_data, val_data, test_data = train_test_split(data_transform_rfm, parameters['parameters_model_input'])
+    train_data, val_data, test_data = split_data(data_transform_rfm, parameters['parameters_model_input'])
 
     # Guardar los datos de entrenamiento, validación y prueba
     train_data_path = os.path.join(data_train_directory, parameters['parameters_catalog']['train_data_path'])
-    val_data_path = os.path.join(data_validation_directory, parameters['parameters_catalog']['val_data_path'])
+    val_data_path = os.path.join(data_validation_directory, parameters['parameters_catalog']['validation_data_path'])
     test_data_path = os.path.join(data_test_directory, parameters['parameters_catalog']['test_data_path'])
 
     train_data.to_parquet(train_data_path, index=False)
