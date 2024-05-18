@@ -15,7 +15,8 @@ from functions.processing import (left_join_dfs,
 
 # Importar funciones de ingeniería de características
 from functions.featuring import (features_new,
-                                 rfm)
+                                 rfm,
+                                 add_segment_fl)
 
 # Directorios para los archivos de parámetros y los datos
 parameters_directory = os.path.join(project_root, 'src', 'parameters')
@@ -74,10 +75,13 @@ def run_featuring():
     data_processed = pd.read_parquet(processed_data_path)
 
     # Crear nuevas características
-    data_featured = features_new(data_processed, parameters['parameters_featuring'])
+    data_features_new = features_new(data_processed, parameters['parameters_featuring'])
 
     # Crear RFM
-    rfm_table = rfm(data_featured, parameters['parameters_featuring'])
+    rfm_table = rfm(data_features_new, parameters['parameters_featuring'])
+
+    # Agregar segmento filtros colaborativos al conjunto de datos
+    data_featured = add_segment_fl(data_features_new, rfm_table, parameters['parameters_featuring'])
 
     # Guardar datos con características
     featured_data_path = os.path.join(data_featured_directory, parameters['parameters_catalog']['featured_data_path'])
