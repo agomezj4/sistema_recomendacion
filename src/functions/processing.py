@@ -86,6 +86,7 @@ def change_dtypes(
             try:
                 if dtype == 'datetime':
                     df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
+                    df[col] = pd.to_datetime(df[col], errors='coerce')
                     logger.info(f"Columna '{col}' convertida a datetime.")
                 elif dtype == 'object':
                     df[col] = df[col].astype('object')
@@ -141,7 +142,9 @@ def impute_missing_categories(
     df_imputado[columns[0]] = df_imputado[columns[0]].fillna(df_imputado['CATEGORIA_imputada'])
     df_imputado = df_imputado.drop(columns=['CATEGORIA_imputada'])
 
-    logger.info(f"Número de categorías nulas después de imputar: {len(df_imputado[df_imputado[columns[0]].isnull()])}")
+    logger.info(f"Número de categorías nulas después de imputar: {len(df_imputado[df_imputado[columns[0]].isnull()])}\n")
+
+    logger.info("Imputación de categorías nulas completada con éxito!")
 
     return df_imputado
 
@@ -240,7 +243,7 @@ def impute_missing_values(
     # Imputar de forma estratificada por la moda
     df = impute_by_mode(df, strat_columns, target_columns)
 
-    logger.info("Proceso de imputación completado con éxito.")
+    logger.info("Proceso de imputación completado con éxito!")
 
     return df
 
