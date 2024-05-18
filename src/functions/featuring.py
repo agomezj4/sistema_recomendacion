@@ -440,6 +440,9 @@ def add_segment_fl(
     segmento_fl = params['segmento_fl'][0]
     id_cliente = params['id_cliente'][0]
     fecha = params['fechas'][0]
+    recencia = params['recencia'][0]
+    frecuencia = params['frecuencia'][0]
+    monto = params['monto'][0]
 
     # Validación de que las columnas 'id' y 'periodo' existen en ambos dataframes
     if id_cliente not in df1.columns or id_cliente not in df2.columns:
@@ -452,7 +455,8 @@ def add_segment_fl(
         raise ValueError(f"La columna '{segmento_fl}' no se encuentra en df2.")
 
     # Selección de las columnas necesarias en df2
-    df2_reduced = df2[[id_cliente, fecha, segmento_fl]].drop_duplicates(subset=[id_cliente, fecha])
+    df2_reduced = df2[[id_cliente, fecha, recencia,
+                       frecuencia, monto, segmento_fl]].drop_duplicates(subset=[id_cliente, fecha])
 
     # Realización del left join
     result_df = df1.merge(df2_reduced, how='left', on=[id_cliente, fecha])

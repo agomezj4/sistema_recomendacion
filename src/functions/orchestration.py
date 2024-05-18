@@ -18,11 +18,17 @@ from functions.featuring import (features_new,
                                  rfm,
                                  add_segment_fl)
 
+# Importar funciones de model input
+from functions.model_input import (transform_rfm, train_test_split)
+
 # Directorios para los archivos de parámetros y los datos
 parameters_directory = os.path.join(project_root, 'src', 'parameters')
 data_raw_directory = os.path.join(project_root, 'data', '01_raw')
 data_processed_directory = os.path.join(project_root, 'data', '02_processed')
 data_featured_directory = os.path.join(project_root, 'data', '03_featured')
+data_train_directory = os.path.join(project_root, 'data', '04_model_input', 'train')
+data_test_directory = os.path.join(project_root, 'data', '04_model_input', 'test')
+data_validation_directory = os.path.join(project_root, 'data', '04_model_input', 'validation')
 
 # Lista todos los archivos YAML en el directorio especificado
 yaml_files = [f for f in os.listdir(parameters_directory) if f.endswith('.yml')]
@@ -89,3 +95,26 @@ def run_featuring():
 
     data_featured.to_parquet(featured_data_path, index=False)
     rfm_table.to_parquet(rfm_table_path, index=False)
+
+# Pipeline de model input
+def run_model_input():
+
+    # Cargar datos
+    featured_data_path = os.path.join(data_featured_directory, parameters['parameters_catalog']['featured_data_path'])
+
+    data_featured = pd.read_parquet(featured_data_path)
+
+    # Transformar RFM
+    data_transform_rfm = transform_rfm(data_featured, parameters['parameters_featuring'])
+
+    # Dividir los datos en entrenamiento, validación y prueba
+    train_data, val_data, test_data = train_test_split(data_transform_rfm, parameters['parameters_model_input'])
+
+    # Guardar los datos de entrenamiento, validación y prueba
+    train_data_path = os.path.join(data_train_directory, parameters['parameters_catalog']['train_data_path'])
+    val_data_path = os.path.join(data_validation_directory, parameters['parameters_catalog']['val_data_path'])
+    test_data_path = os.path.join(data_test_directory, parameters['parameters_catalog']['test_data_path'])
+
+    train_data.to_parquet(train_data_path, index=False)
+    val_data.to_parquet(val_data_path, index=False)
+    test_data.to_parquet(test_data_path, index=False)

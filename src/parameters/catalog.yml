@@ -7,3 +7,9 @@ processed_data_path: data_processing.parquet
 featured_data_path: data_featuring.parquet
 
 rfm_table_path: rfm_table.parquet
+
+train_data_path: data_train.parquet
+
+test_data_path: data_test.parquet
+
+validation_data_path: data_validation.parquet
