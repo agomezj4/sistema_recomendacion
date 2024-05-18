@@ -79,3 +79,6 @@ producto:
  - COD_PRODUCTO
  - CATEGORIA
  - UNIDADES_BRUTAS
+
+segmento_fl:
+ - Segmento_FC
