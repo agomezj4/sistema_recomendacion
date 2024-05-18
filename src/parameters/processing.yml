@@ -1,0 +1,24 @@
+## Processing parameters
+
+# Parámetros para left_join_dfs
+join_column:
+ - UUID_CLIENTE_CONSUMIDOR
+
+# Parámetros para change_dtypes
+cols: {
+    'FECHA_SOLUCION': 'datetime',
+    'FECHANACIMIENTO_DIM_CLIENTE': 'datetime',
+    'PEDIDO': 'object',
+    'COD_PRODUCTO': 'object',
+}
+
+# Parámetros para impute_missing_categories
+columns:
+ - CATEGORIA
+ - COD_PRODUCTO
+
+target_columns:
+ - DEPARTAMENTO
+ - CIUDAD
+ - GENERO_DIM_CLIENTE
+ - FECHANACIMIENTO_DIM_CLIENTE
