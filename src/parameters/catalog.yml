@@ -1,5 +1,6 @@
 ## Data paths parameters
 raw_data_set1_path: dataset_sample_1.csv
+
 raw_data_set2_path: dataset_sample_2.csv
 
 processed_data_path: data_processing.parquet
@@ -7,3 +8,9 @@ processed_data_path: data_processing.parquet
 featured_data_path: data_featuring.parquet
 
 rfm_table_path: rfm_table.parquet
+
+train_data_path: data_train.parquet
+
+test_data_path: data_test.parquet
+
+validation_data_path: data_validation.parquet
