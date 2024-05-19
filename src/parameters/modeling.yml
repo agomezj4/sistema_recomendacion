@@ -5,11 +5,13 @@ train_als: {
     'rating_cols': ['R_calificacion', 'F_calificacion', 'M_calificacion'],
     'user_col': 'UUID_CLIENTE_CONSUMIDOR',
     'item_col': 'COD_PRODUCTO',
+    'segmento_fc':'Segmento_FC',
     'factors': 10,
     'regularization': 0.1,
     'iterations': 10,
 }
 
+# Parámetros para grid_search_als
 param_grid: {
     'factors': [10, 20, 30,],
     'regularization': [0.01, 0.1, 1.0,],

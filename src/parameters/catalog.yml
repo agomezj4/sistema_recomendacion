@@ -15,4 +15,4 @@ test_data_path: data_test.parquet
 
 validation_data_path: data_validation.parquet
 
-best_model_path: best_als_model.pkl
+bests_models_path: bests_als_models.pkl
