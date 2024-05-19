@@ -22,7 +22,7 @@ def transform_rfm(
     df : pandas.DataFrame
         DataFrame de pandas que contiene las métricas RFM de los clientes.
     params: Dict[str, Any]
-        Diccionario de parámetros necesarios para la transformación de RFM.
+        Diccionario de parámetros model_input.
 
     Returns
     -------
@@ -48,7 +48,45 @@ def transform_rfm(
     return df_copy
 
 
-# 2. Conjutno entrenamiento, validación y prueba
+# 2. Escalado de los valores de calificación
+def min_max_scaler(
+        df: pd.DataFrame,
+        params: Dict[str, Any]
+) -> pd.DataFrame:
+    """
+    Estandariza las columnas numéricas (excluyendo binarias) de un DataFrame utilizando el método Min-Max Scaler.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame de pandas que se estandarizará.
+    params: Dict[str, Any]
+        Diccionario de parámetros model_input.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame estandarizado.
+    """
+    logger.info("Iniciando la estandarización con Min-Max Scaler...")
+
+    # Identificar las columnas numéricas
+    numeric_cols = params['numeric_cols']
+
+    # Aplicar Min-Max Scaler solo a las columnas numéricas especificadas
+    for col in numeric_cols:
+        min_val = df[col].min()
+        max_val = df[col].max()
+        range_val = max_val - min_val
+        if range_val != 0:  # Evita la división por cero en caso de que todas las entradas en una columna sean iguales
+            df[col] = (df[col] - min_val) / range_val
+
+    logger.info("Estandarización con Min-Max Scaler completada!")
+
+    return df
+
+
+# 3. Conjutno entrenamiento, validación y prueba
 def split_data(
         df: pd.DataFrame,
         params: Dict[str, Any]
@@ -61,7 +99,7 @@ def split_data(
     df : pd.DataFrame
         DataFrame de pandas que se dividirá.
     params: Dict[str, Any]
-        Diccionario de parámetros que contiene las proporciones de división.
+        Diccionario de parámetros model_input.
 
     Returns
     -------
