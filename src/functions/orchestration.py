@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import sys
 import yaml
+import pickle
 
 # Ajustar el path del sistema para incluir el directorio 'src' al nivel superior
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,7 +20,10 @@ from functions.featuring import (features_new,
                                  add_segment_fl)
 
 # Importar funciones de model input
-from functions.model_input import (transform_rfm, split_data)
+from functions.model_input import (transform_rfm, min_max_scaler, split_data)
+
+# Importar funciones de modeling
+from functions.modeling import (train_als, grid_search_als)
 
 # Directorios para los archivos de parámetros y los datos
 parameters_directory = os.path.join(project_root, 'src', 'parameters')
@@ -29,6 +33,7 @@ data_featured_directory = os.path.join(project_root, 'data', '03_featured')
 data_train_directory = os.path.join(project_root, 'data', '04_model_input', 'train')
 data_test_directory = os.path.join(project_root, 'data', '04_model_input', 'test')
 data_validation_directory = os.path.join(project_root, 'data', '04_model_input', 'validation')
+modeling_directory = os.path.join(project_root, 'data', '05_modeling')
 
 # Lista todos los archivos YAML en el directorio especificado
 yaml_files = [f for f in os.listdir(parameters_directory) if f.endswith('.yml')]
@@ -107,8 +112,11 @@ def run_model_input():
     # Transformar RFM
     data_transform_rfm = transform_rfm(data_featured, parameters['parameters_featuring'])
 
+    # Escalar los datos
+    data_min_max_scaler = min_max_scaler(data_transform_rfm, parameters['parameters_model_input'])
+
     # Dividir los datos en entrenamiento, validación y prueba
-    train_data, val_data, test_data = split_data(data_transform_rfm, parameters['parameters_model_input'])
+    train_data, val_data, test_data = split_data(data_min_max_scaler, parameters['parameters_model_input'])
 
     # Guardar los datos de entrenamiento, validación y prueba
     train_data_path = os.path.join(data_train_directory, parameters['parameters_catalog']['train_data_path'])
@@ -118,3 +126,26 @@ def run_model_input():
     train_data.to_parquet(train_data_path, index=False)
     val_data.to_parquet(val_data_path, index=False)
     test_data.to_parquet(test_data_path, index=False)
+
+# Pipeline de modelado
+def run_modeling():
+
+    # Cargar datos
+    train_data_path = os.path.join(data_train_directory, parameters['parameters_catalog']['train_data_path'])
+    train_data = pd.read_parquet(train_data_path)
+
+    validation_data_path = os.path.join(data_validation_directory, parameters['parameters_catalog']['validation_data_path'])
+    validation_data = pd.read_parquet(validation_data_path)
+
+    # Entrenar modelo ALS
+    model_als = train_als(train_data, parameters['parameters_modeling'])
+
+    # Realizar grid search
+    best_model_als = grid_search_als(model_als, validation_data, parameters['parameters_modeling'])
+
+    # Guardar modelo
+    best_model_path = os.path.join(modeling_directory, parameters['parameters_catalog']['best_model_path'])
+    with open(best_model_path, 'wb') as f:
+        pickle.dump(best_model_als, f)
+
+
