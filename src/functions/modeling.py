@@ -6,7 +6,6 @@ import logging
 
 from scipy.sparse import csr_matrix
 from implicit.als import AlternatingLeastSquares
-from sklearn.model_selection import RepeatedKFold
 
 from threadpoolctl import threadpool_limits
 
@@ -16,13 +15,13 @@ logger.setLevel(logging.INFO)
 
 #1. Filtrado Colaborativo
 
-#Paso 1: entrenar el modelo con crossvalidation y el conjunto train
+#Paso 1: entrenar el modelo con el conjunto train
 def train_als(
-    df_train: pd.DataFrame, 
+    df_train: pd.DataFrame,
     params: Dict[str, Any]
-) -> AlternatingLeastSquares:
+) -> Dict[str, AlternatingLeastSquares]:
     """
-    Entrena un modelo ALS (Alternating Least Squares) con cross-validation.
+    Entrena un modelo ALS (Alternating Least Squares) para cada segmento definido en 'segmento_fc'.
 
     Parameters
     ----------
@@ -33,48 +32,64 @@ def train_als(
 
     Returns
     -------
-    AlternatingLeastSquares: Modelo ALS entrenado.
+    Dict[str, AlternatingLeastSquares]: Diccionario de modelos ALS entrenados por segmento.
     """
-    logger.info("Iniciando el entrenamiento del modelo ALS...")
+    logger.info("Iniciando el entrenamiento del modelo ALS por segmento...")
 
+    # Parámetros
     rating_cols = params['train_als']['rating_cols']  # ['recencia', 'frecuencia', 'monto']
     user_col = params['train_als']['user_col']
     item_col = params['train_als']['item_col']
+    segment_col = params['train_als']['segmento_fc']  # Columna para segmentar
 
-    df_train[user_col] = df_train[user_col].astype('category')
-    df_train[item_col] = df_train[item_col].astype('category')
+    models = {}
 
-    user_item_matrix = csr_matrix((df_train[rating_cols].mean(axis=1).values,
-                                   (df_train[user_col].cat.codes.values,
-                                    df_train[item_col].cat.codes.values)),
-                                  shape=(df_train[user_col].cat.categories.size, 
-                                         df_train[item_col].cat.categories.size))
+    # Entrenar un modelo ALS para cada segmento
+    for segment in df_train[segment_col].unique():
+        logger.info(f"Entrenando modelo ALS para el segmento: {segment}")
+        df_segment = df_train[df_train[segment_col] == segment]
 
-    # Limitar los hilos de OpenBLAS
-    with threadpool_limits(limits=1, user_api='blas'):
-        model = AlternatingLeastSquares(factors=params['train_als']['factors'],
-                                        regularization=params['train_als']['regularization'],
-                                        iterations=params['train_als']['iterations'])
-        model.fit(user_item_matrix)
+        # Convertir las columnas de usuario y producto a categóricas
+        df_segment[user_col] = df_segment[user_col].astype('category')
+        df_segment[item_col] = df_segment[item_col].astype('category')
 
-    logger.info("Finalizado el entrenamiento del modelo ALS!")
-    
-    return model
+        # Crear la matriz de usuario-elemento
+        user_item_matrix = csr_matrix((df_segment[rating_cols].mean(axis=1).values,
+                                       (df_segment[user_col].cat.codes.values,
+                                        df_segment[item_col].cat.codes.values)),
+                                      shape=(df_segment[user_col].cat.categories.size,
+                                             df_segment[item_col].cat.categories.size))
+
+        # Limitar los hilos de OpenBLAS
+        # Entrene el modelo ALS con un solo hilo para evitar problemas de rendimiento
+        with threadpool_limits(limits=1, user_api='blas'):
+            model = AlternatingLeastSquares(factors=params['train_als']['factors'],
+                                            regularization=params['train_als']['regularization'],
+                                            iterations=params['train_als']['iterations'])
+            model.fit(user_item_matrix)
+
+        # Guardar el modelo en el diccionario
+        models[segment] = model
+        logger.info(f"Modelo ALS para el segmento {segment} entrenado con éxito.")
+
+    logger.info("Finalizado el entrenamiento de todos los modelos ALS por segmento!")
+
+    return models
 
 
 # Paso 2: búsqueda de hiperparametros óptimos con gridsearch
 def grid_search_als(
-    model: AlternatingLeastSquares, 
+    models: Dict[str, AlternatingLeastSquares], 
     df_val: pd.DataFrame, 
     params: Dict[str, Any]
-) -> AlternatingLeastSquares:
+) -> Dict[str, AlternatingLeastSquares]:
     """
-    Realiza una búsqueda de hiperparámetros para el modelo ALS.
+    Realiza una búsqueda de hiperparámetros para cada modelo ALS en el diccionario.
 
     Parameters
     ----------
-    model : AlternatingLeastSquares
-        Modelo ALS entrenado inicialmente.
+    models : Dict[str, AlternatingLeastSquares]
+        Diccionario de modelos ALS entrenados inicialmente, segmentados por claves.
     df_val : pandas.DataFrame
         DataFrame de pandas que contiene los datos de validación de los clientes y productos.
     params: Dict[str, Any]
@@ -82,52 +97,65 @@ def grid_search_als(
 
     Returns
     -------
-    AlternatingLeastSquares: Modelo ALS con los mejores hiperparámetros.
+    Dict[str, AlternatingLeastSquares]: Diccionario de modelos ALS con los mejores hiperparámetros por segmento.
     """
-    logger.info("Iniciando la búsqueda de hiperparámetros...")
+    logger.info("Iniciando la búsqueda de hiperparámetros para cada segmento...")
 
+    # Parámetros
     rating_cols = params['train_als']['rating_cols']  # ['recencia', 'frecuencia', 'monto']
     user_col = params['train_als']['user_col']
     item_col = params['train_als']['item_col']
+    segment_col = params['train_als']['segmento_fc']  # Columna para segmentar
     param_grid = params['param_grid']
 
-    # Crear matriz CSR para ALS
-    user_item_matrix = csr_matrix((df_val[rating_cols].mean(axis=1),
-                                   (df_val[user_col].astype('category').cat.codes,
-                                    df_val[item_col].astype('category').cat.codes)))
+    # Diccionario para guardar los mejores modelos
+    best_models = {}
 
-    best_score = float('inf')
-    best_params = {}
+    # Búsqueda de hiperparámetros para cada segmento
+    for segment, model in models.items():
+        logger.info(f"Buscando mejores hiperparámetros para el segmento: {segment}")
+        df_segment = df_val[df_val[segment_col] == segment]
 
-    for factors in param_grid['factors']:
-        for regularization in param_grid['regularization']:
-            for iterations in param_grid['iterations']:
-                model = AlternatingLeastSquares(factors=factors, regularization=regularization, iterations=iterations)
-                model.fit(user_item_matrix)
+        user_item_matrix = csr_matrix((df_segment[rating_cols].mean(axis=1),
+                                       (df_segment[user_col].astype('category').cat.codes,
+                                        df_segment[item_col].astype('category').cat.codes)))
 
-                score = evaluate_model(model, user_item_matrix)  # Usar conjunto de validación para evaluar
-                if score < best_score:
-                    best_score = score
-                    best_params = {
-                        'factors': factors,
-                        'regularization': regularization,
-                        'iterations': iterations
-                    }
+        best_score = float('inf')
+        best_params = {}
 
-    logger.info(f"Mejores hiperparámetros encontrados: {best_params} con una puntuación de {best_score}")
+        # Búsqueda de hiperparámetros
+        for factors in param_grid['factors']:
+            for regularization in param_grid['regularization']:
+                for iterations in param_grid['iterations']:
+                    temp_model = AlternatingLeastSquares(factors=factors, regularization=regularization, iterations=iterations)
+                    temp_model.fit(user_item_matrix)
 
-    # Entrenar el modelo final con los mejores hiperparámetros
-    model = AlternatingLeastSquares(factors=best_params['factors'],
-                                    regularization=best_params['regularization'],
-                                    iterations=best_params['iterations'])
-    model.fit(user_item_matrix)
+                    score = evaluate_model(temp_model, user_item_matrix)  # Usar conjunto de validación para evaluar
+                    if score < best_score:
+                        best_score = score
+                        best_params = {
+                            'factors': factors,
+                            'regularization': regularization,
+                            'iterations': iterations
+                        }
+
+        logger.info(f"Mejores hiperparámetros para el segmento {segment}: {best_params} con una puntuación de {best_score}")
+
+        # Entrenar el modelo final con los mejores hiperparámetros
+        best_model = AlternatingLeastSquares(factors=best_params['factors'],
+                                             regularization=best_params['regularization'],
+                                             iterations=best_params['iterations'])
+        best_model.fit(user_item_matrix)
+        
+        best_models[segment] = best_model
+        logger.info(f"Modelo ALS optimizado para el segmento {segment} entrenado con éxito.")
+
+    logger.info("Finalizado la búsqueda de hiperparámetros para todos los segmentos!")
     
-    logger.info("Finalizado la búsqueda de hiperparámetros!")
-    
-    return model
+    return best_models
 
 
-# Paso 3: Evaluar el modelo
+# Paso 3: evaluar rendimiento del algoritmo
 def evaluate_model(
     model: AlternatingLeastSquares, 
     val_data: csr_matrix
@@ -166,6 +194,5 @@ def evaluate_model(
     logger.info(f"Puntuación de evaluación del modelo: {mse}")
 
     return mse
-
 
 

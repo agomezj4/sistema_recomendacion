@@ -138,14 +138,14 @@ def run_modeling():
     validation_data = pd.read_parquet(validation_data_path)
 
     # Entrenar modelo ALS
-    model_als = train_als(train_data, parameters['parameters_modeling'])
+    models_als = train_als(train_data, parameters['parameters_modeling'])
 
     # Realizar grid search
-    best_model_als = grid_search_als(model_als, validation_data, parameters['parameters_modeling'])
+    bests_models_als = grid_search_als(models_als, validation_data, parameters['parameters_modeling'])
 
     # Guardar modelo
-    best_model_path = os.path.join(modeling_directory, parameters['parameters_catalog']['best_model_path'])
-    with open(best_model_path, 'wb') as f:
-        pickle.dump(best_model_als, f)
+    bests_models_path = os.path.join(modeling_directory, parameters['parameters_catalog']['bests_models_path'])
+    with open(bests_models_path, 'wb') as f:
+        pickle.dump(bests_models_als, f)
 
 
