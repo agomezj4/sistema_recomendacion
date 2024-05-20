@@ -24,7 +24,7 @@ preparation:
   <<: *common_setup
   script:
     - echo "INICIO ETAPA PROCESAMIENTO DE DATOS..."
-    - proyecto_tc/bin/python3 __main__.py 'preparation_pipeline'
+    - sistema_recomendacion/bin/python3 __main__.py 'preparation_pipeline'
     - echo "FIN ETAPA PROCESAMIENTO DE DATOS!"
 
 feature_engineering:
@@ -33,7 +33,7 @@ feature_engineering:
     <<: *common_setup
     script:
         - echo "INICIO ETAPA INGENIERÍA DE CARACTERÍSTICAS..."
-        - proyecto_tc/bin/python3 __main__.py 'feature_engineering_pipeline'
+        - sistema_recomendacion/bin/python3 __main__.py 'feature_engineering_pipeline'
         - echo "FIN ETAPA INGENIERÍA DE CARACTERÍSTICAS!"
 
 model_input:
@@ -42,7 +42,7 @@ model_input:
     <<: *common_setup
     script:
         - echo "INICIO ETAPA MODEL INPUT..."
-        - proyecto_tc/bin/python3 __main__.py 'model_input_pipeline'
+        - sistema_recomendacion/bin/python3 __main__.py 'model_input_pipeline'
         - echo "FIN ETAPA MODEL INPUT!"
 
 models:
@@ -51,7 +51,7 @@ models:
     <<: *common_setup
     script:
         - echo "INICIO ETAPA ETRENAMIENTO Y EVALUACIÓN DE MODELOS..."
-        - proyecto_tc/bin/python3 __main__.py 'modeling_pipeline'
+        - sistema_recomendacion/bin/python3 __main__.py 'modeling_pipeline'
         - echo "FIN ETAPA ETRENAMIENTO Y EVALUACIÓN DE MODELOS!"
 
 model_selection:
@@ -60,5 +60,5 @@ model_selection:
     <<: *common_setup
     script:
         - echo "INICIO ETAPA PREDICCIONES..."
-        - proyecto_tc/bin/python3 __main__.py 'prediction_pipeline'
+        - sistema_recomendacion/bin/python3 __main__.py 'prediction_pipeline'
         - echo "FIN ETAPA PREDICCIONES!"
