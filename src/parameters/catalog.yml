@@ -16,3 +16,9 @@ test_data_path: data_test.parquet
 validation_data_path: data_validation.parquet
 
 bests_models_path: bests_als_models.pkl
+
+scores_models_path: scores_als_models.pkl
+
+predict_data_path: data_predict.parquet
+
+model_output_path: recomendaciones_clientes.csv

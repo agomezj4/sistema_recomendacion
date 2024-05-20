@@ -1,0 +1,28 @@
+name: Sync Repo to GitLab
+
+on:
+  push:
+    branches:
+      - main
+      - predicting
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add GitLab SSH key to known hosts
+        run: ssh-keyscan -H gitlab.com >> ~/.ssh/known_hosts
+
+      - name: Sync to GitLab
+        run: |
+          git remote add gitlab git@gitlab.com:agomezj4/sistema_recomendacion.git
+          git fetch --unshallow
+          git push gitlab ${{ github.ref_name }} --force
