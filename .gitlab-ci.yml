@@ -1,0 +1,64 @@
+.common_setup: &common_setup
+  before_script:
+    - apt-get update -y && apt-get install -y python3 python3-pip python3-venv
+    - python3 -m venv sistema_recomendacion
+    - source sistema_recomendacion/bin/activate
+    - pip3 install pandas
+    - pip3 install numpy
+    - pip3 install pyyaml
+    - pip3 install scikit-learn
+    - pip3 install pyarrow
+    - pip3 install implicit
+
+
+stages:
+  - preparation
+  - feature_engineering
+  - model_input
+  - models
+  - prediction
+
+preparation_pipeline:
+  image: ruby:3.1
+  stage: preparation
+  <<: *common_setup
+  script:
+    - echo "INICIO ETAPA PROCESAMIENTO DE DATOS..."
+    - sistema_recomendacion/bin/python3 __main__.py 'preparation_pipeline'
+    - echo "FIN ETAPA PROCESAMIENTO DE DATOS!"
+
+feature_engineering_pipeline:
+    image: ruby:3.1
+    stage: feature_engineering
+    <<: *common_setup
+    script:
+        - echo "INICIO ETAPA INGENIERÍA DE CARACTERÍSTICAS..."
+        - sistema_recomendacion/bin/python3 __main__.py 'feature_engineering_pipeline'
+        - echo "FIN ETAPA INGENIERÍA DE CARACTERÍSTICAS!"
+
+model_input_pipeline:
+    image: ruby:3.1
+    stage: model_input
+    <<: *common_setup
+    script:
+        - echo "INICIO ETAPA MODEL INPUT..."
+        - sistema_recomendacion/bin/python3 __main__.py 'model_input_pipeline'
+        - echo "FIN ETAPA MODEL INPUT!"
+
+models_pipeline:
+    image: ruby:3.1
+    stage: models
+    <<: *common_setup
+    script:
+        - echo "INICIO ETAPA ETRENAMIENTO Y EVALUACIÓN DE MODELOS..."
+        - sistema_recomendacion/bin/python3 __main__.py 'modeling_pipeline'
+        - echo "FIN ETAPA ETRENAMIENTO Y EVALUACIÓN DE MODELOS!"
+
+prediction_pipeline:
+    image: ruby:3.1
+    stage: prediction
+    <<: *common_setup
+    script:
+        - echo "INICIO ETAPA PREDICCIONES..."
+        - sistema_recomendacion/bin/python3 __main__.py 'prediction_pipeline'
+        - echo "FIN ETAPA PREDICCIONES!"

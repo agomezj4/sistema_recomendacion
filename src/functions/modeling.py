@@ -196,3 +196,62 @@ def evaluate_model(
     return mse
 
 
+# Paso 4: evaluar modelos finales
+def evaluate_final_models(
+    best_models: Dict[str, AlternatingLeastSquares], 
+    df_test: pd.DataFrame, 
+    params: Dict[str, Any]
+) -> Dict[str, float]:
+    """
+    Evalúa los modelos ALS optimizados en el conjunto de test.
+
+    Parameters
+    ----------
+    best_models : Dict[str, AlternatingLeastSquares]
+        Diccionario de modelos ALS optimizados, segmentados por claves.
+    df_test : pandas.DataFrame
+        DataFrame de pandas que contiene los datos de test de los clientes y productos.
+    params: Dict[str, Any]
+        Diccionario de parámetros modeling.
+
+    Returns
+    -------
+    Dict[str, float]: Diccionario con las puntuaciones de evaluación por segmento.
+    """
+    logger.info("Iniciando la evaluación final de los modelos en el conjunto de test...")
+
+    rating_cols = params['train_als']['rating_cols']  # ['recencia', 'frecuencia', 'monto']
+    user_col = params['train_als']['user_col']
+    item_col = params['train_als']['item_col']
+    segment_col = params['train_als']['segmento_fc']  # Columna para segmentar
+
+    test_scores = {}
+
+    for segment, model in best_models.items():
+        logger.info(f"Evaluando modelo ALS para el segmento: {segment}")
+        df_segment = df_test[df_test[segment_col] == segment]
+
+        # Mapear los códigos de usuario y producto para que coincidan con los del conjunto de entrenamiento
+        user_mapper = {cat: idx for idx, cat in enumerate(df_segment[user_col].astype('category').cat.categories)}
+        item_mapper = {cat: idx for idx, cat in enumerate(df_segment[item_col].astype('category').cat.categories)}
+
+        user_codes = df_segment[user_col].astype('category').cat.codes.map(user_mapper)
+        item_codes = df_segment[item_col].astype('category').cat.codes.map(item_mapper)
+
+        # Filtrar valores NaN (usuarios/productos en test que no estuvieron en entrenamiento)
+        valid_entries = ~user_codes.isna() & ~item_codes.isna()
+        user_codes = user_codes[valid_entries].astype(int)
+        item_codes = item_codes[valid_entries].astype(int)
+        ratings = df_segment[rating_cols].mean(axis=1)[valid_entries]
+
+        user_item_matrix = csr_matrix((ratings, (user_codes, item_codes)),
+                                      shape=(model.user_factors.shape[0], model.item_factors.shape[0]))
+
+        score = evaluate_model(model, user_item_matrix)
+        test_scores[segment] = score
+        logger.info(f"Puntuación de evaluación para el segmento {segment}: {score}")
+
+    logger.info("Finalizado la evaluación de todos los modelos en el conjunto de test!")
+    
+    return test_scores
+

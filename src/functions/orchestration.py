@@ -20,10 +20,18 @@ from functions.featuring import (features_new,
                                  add_segment_fl)
 
 # Importar funciones de model input
-from functions.model_input import (transform_rfm, min_max_scaler, split_data)
+from functions.model_input import (transform_rfm,
+                                   min_max_scaler,
+                                   split_data)
 
 # Importar funciones de modeling
-from functions.modeling import (train_als, grid_search_als)
+from functions.modeling import (train_als,
+                                grid_search_als,
+                                evaluate_final_models)
+
+# Importar funciones de predicción
+from functions.predicting import (predicting_als)
+
 
 # Directorios para los archivos de parámetros y los datos
 parameters_directory = os.path.join(project_root, 'src', 'parameters')
@@ -33,7 +41,8 @@ data_featured_directory = os.path.join(project_root, 'data', '03_featured')
 data_train_directory = os.path.join(project_root, 'data', '04_model_input', 'train')
 data_test_directory = os.path.join(project_root, 'data', '04_model_input', 'test')
 data_validation_directory = os.path.join(project_root, 'data', '04_model_input', 'validation')
-modeling_directory = os.path.join(project_root, 'data', '05_modeling')
+modeling_directory = os.path.join(project_root, 'data', '05_modeled')
+predicting_directory = os.path.join(project_root, 'data', '06_predicted')
 
 # Lista todos los archivos YAML en el directorio especificado
 yaml_files = [f for f in os.listdir(parameters_directory) if f.endswith('.yml')]
@@ -123,9 +132,13 @@ def run_model_input():
     val_data_path = os.path.join(data_validation_directory, parameters['parameters_catalog']['validation_data_path'])
     test_data_path = os.path.join(data_test_directory, parameters['parameters_catalog']['test_data_path'])
 
+    predict_data_path = os.path.join(predicting_directory, parameters['parameters_catalog']['predict_data_path'])
+
     train_data.to_parquet(train_data_path, index=False)
     val_data.to_parquet(val_data_path, index=False)
     test_data.to_parquet(test_data_path, index=False)
+
+    data_min_max_scaler.to_parquet(predict_data_path, index=False)
 
 # Pipeline de modelado
 def run_modeling():
@@ -137,15 +150,43 @@ def run_modeling():
     validation_data_path = os.path.join(data_validation_directory, parameters['parameters_catalog']['validation_data_path'])
     validation_data = pd.read_parquet(validation_data_path)
 
+    test_data_path = os.path.join(data_test_directory, parameters['parameters_catalog']['test_data_path'])
+    test_data = pd.read_parquet(test_data_path)
+
     # Entrenar modelo ALS
     models_als = train_als(train_data, parameters['parameters_modeling'])
 
     # Realizar grid search
     bests_models_als = grid_search_als(models_als, validation_data, parameters['parameters_modeling'])
 
-    # Guardar modelo
+    # Evaluar modelos finales
+    scores_models = evaluate_final_models(bests_models_als, test_data, parameters['parameters_modeling'])
+
+    # Guardar modelo y scores
     bests_models_path = os.path.join(modeling_directory, parameters['parameters_catalog']['bests_models_path'])
     with open(bests_models_path, 'wb') as f:
         pickle.dump(bests_models_als, f)
+
+    scores_models_path = os.path.join(modeling_directory, parameters['parameters_catalog']['scores_models_path'])
+    with open(scores_models_path, 'wb') as f:
+        pickle.dump(scores_models, f)
+
+# Pipeline de predicción
+def run_prediction():
+
+    # Cargar datos
+    predict_data_path = os.path.join(predicting_directory, parameters['parameters_catalog']['predict_data_path'])
+    predict_data = pd.read_parquet(predict_data_path)
+
+    bests_models_path = os.path.join(modeling_directory, parameters['parameters_catalog']['bests_models_path'])
+    with open(bests_models_path, 'rb') as f:
+        bests_models_als = pickle.load(f)
+
+    # Realizar predicciones
+    predictions = predicting_als(bests_models_als, predict_data, parameters['parameters_modeling'])
+
+    # Guardar predicciones
+    predictions_path = os.path.join(predicting_directory, parameters['parameters_catalog']['model_output_path'])
+    predictions.to_csv(predictions_path, index=False)
 
 
