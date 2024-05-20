@@ -54,7 +54,7 @@ models:
         - sistema_recomendacion/bin/python3 __main__.py 'modeling_pipeline'
         - echo "FIN ETAPA ETRENAMIENTO Y EVALUACIÓN DE MODELOS!"
 
-model_selection:
+prediction:
     image: ruby:3.1
     stage: prediction
     <<: *common_setup
